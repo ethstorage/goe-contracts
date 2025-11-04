@@ -13,7 +13,7 @@ contract Deploy is Script {
         address flatDirectoryFactory;
         if (block.chainid == 11155111) {
             // Sepolia
-            flatDirectoryFactory = 0xF2B7ef5e5bf88A15B68046Ffa784f98702621Ee7;
+            flatDirectoryFactory = 0x68272e6ff4c37b49eAf14bd7DF952E74840a22e0;
         } else if (block.chainid == 3335) {
             // quarkchain L2 network
             flatDirectoryFactory = 0x7a677F74827E7296978f1c2dC07b054d16F5E878;
