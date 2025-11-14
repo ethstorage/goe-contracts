@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
-import {EthsRepo} from "../src/EthsRepo.sol";
+import {GoeRepo} from "../src/GoeRepo.sol";
 import {IFlatDirectoryFactory} from "../src/interfaces/IFlatDirectoryFactory.sol";
 
 contract MockFlatDirectoryFactory is IFlatDirectoryFactory {
@@ -35,8 +35,8 @@ contract MockFlatDirectory {
     receive() external payable {}
 }
 
-contract EthsRepoTest is Test {
-    EthsRepo repo;
+contract GoeRepoTest is Test {
+    GoeRepo repo;
     MockFlatDirectoryFactory factory;
     MockFlatDirectory db;
 
@@ -56,7 +56,7 @@ contract EthsRepoTest is Test {
 
     function setUp() public {
         factory = new MockFlatDirectoryFactory();
-        repo = new EthsRepo();
+        repo = new GoeRepo();
         repo.initialize(owner, "myrepo", factory);
 
         // give roles
@@ -99,7 +99,7 @@ contract EthsRepoTest is Test {
         (head, exists) = repo.getBranchHead(BRANCH_MAIN);
         assertEq(head, OID2);
 
-        EthsRepo.PushRecord[] memory recs = repo.getPushRecords(BRANCH_MAIN, 0, 10);
+        GoeRepo.PushRecord[] memory recs = repo.getPushRecords(BRANCH_MAIN, 0, 10);
         assertEq(recs.length, 2);
         assertEq(recs[1].newOid, OID2);
         vm.stopPrank();
@@ -159,7 +159,7 @@ contract EthsRepoTest is Test {
         repo.forcePush(BRANCH_MAIN, OID3, PACK3, 300, ZERO_OID, 0);
         vm.stopPrank();
 
-        EthsRepo.PushRecord[] memory recs = repo.getPushRecords(BRANCH_MAIN, 0, 10);
+        GoeRepo.PushRecord[] memory recs = repo.getPushRecords(BRANCH_MAIN, 0, 10);
         assertEq(recs.length, 1);
         assertEq(recs[0].newOid, OID3);
         (bytes20 head,) = repo.getBranchHead(BRANCH_MAIN);
@@ -181,7 +181,7 @@ contract EthsRepoTest is Test {
         repo.forcePush(BRANCH_MAIN, OID3, PACK3, 300, OID1, 0);
         vm.stopPrank();
 
-        EthsRepo.PushRecord[] memory recs = repo.getPushRecords(BRANCH_MAIN, 0, 10);
+        GoeRepo.PushRecord[] memory recs = repo.getPushRecords(BRANCH_MAIN, 0, 10);
         assertEq(recs.length, 2);
         assertEq(recs[1].newOid, OID3);
     }
@@ -195,13 +195,13 @@ contract EthsRepoTest is Test {
         repo.push("main", ZERO_OID, OID2, PACK2, 100);
         vm.stopPrank();
 
-        EthsRepo.RefData[] memory list = repo.listBranches(0, 10);
+        GoeRepo.RefData[] memory list = repo.listBranches(0, 10);
         assertEq(list.length, 2);
 
         // pagination
-        EthsRepo.RefData[] memory page1 = repo.listBranches(0, 1);
+        GoeRepo.RefData[] memory page1 = repo.listBranches(0, 1);
         assertEq(page1.length, 1);
-        EthsRepo.RefData[] memory page2 = repo.listBranches(1, 1);
+        GoeRepo.RefData[] memory page2 = repo.listBranches(1, 1);
         assertEq(page2.length, 1);
     }
 
@@ -227,7 +227,7 @@ contract EthsRepoTest is Test {
         repo.push(BRANCH_MAIN, ZERO_OID, OID1, PACK1, 100);
         vm.stopPrank();
 
-        EthsRepo.PushRecord[] memory recs = repo.getPushRecords(BRANCH_MAIN, 10, 5);
+        GoeRepo.PushRecord[] memory recs = repo.getPushRecords(BRANCH_MAIN, 10, 5);
         assertEq(recs.length, 0);
     }
 

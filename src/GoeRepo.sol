@@ -7,7 +7,7 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {IFlatDirectoryFactory} from "./interfaces/IFlatDirectoryFactory.sol";
 import {IFlatDirectory} from "./interfaces/IFlatDirectory.sol";
 
-contract EthsRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
+contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
     // Role definitions - Minimum permission set
     bytes32 public constant MAINTAINER_ROLE = keccak256("MAINTAINER_ROLE");
     bytes32 public constant PUSHER_ROLE = keccak256("PUSHER_ROLE");

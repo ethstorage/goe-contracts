@@ -4,10 +4,11 @@ pragma solidity ^0.8.19;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {EthsRepo} from "./EthsRepo.sol";
-import {IFlatDirectoryFactory} from "./interfaces/IFlatDirectoryFactory.sol";
 
-contract EthsHub is Ownable, ReentrancyGuard {
+import {IFlatDirectoryFactory} from "./interfaces/IFlatDirectoryFactory.sol";
+import {GoeRepo} from "./GoeRepo.sol";
+
+contract GoeHub is Ownable, ReentrancyGuard {
     event RepoCreated(address indexed repo, address indexed creator, bytes repoName);
     event ImplementationUpdated(address indexed oldImp, address indexed newImp);
     event FDFactoryUpdated(address indexed oldFactory, address indexed newFactory);
@@ -26,7 +27,7 @@ contract EthsHub is Ownable, ReentrancyGuard {
     constructor(address _fdFactory) Ownable(msg.sender) {
         require(_fdFactory != address(0), "EthfsHub: invalid db factory");
         fdFactory = _fdFactory;
-        repoImpl = address(new EthsRepo());
+        repoImpl = address(new GoeRepo());
     }
 
     function setRepoImplementation(address _newImp) external onlyOwner {
@@ -43,7 +44,7 @@ contract EthsHub is Ownable, ReentrancyGuard {
 
     function createRepo(bytes memory repoName) external nonReentrant returns (address) {
         address repoInstance = Clones.clone(repoImpl);
-        EthsRepo(payable(repoInstance)).initialize(msg.sender, repoName, IFlatDirectoryFactory(fdFactory));
+        GoeRepo(payable(repoInstance)).initialize(msg.sender, repoName, IFlatDirectoryFactory(fdFactory));
 
         RepoInfo memory info = RepoInfo({repoAddress: repoInstance, creationTime: block.timestamp, repoName: repoName});
         reposOf[msg.sender].push(info);
