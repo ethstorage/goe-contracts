@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
-import {GoeHub} from "../src/EthsHub.sol";
+import {GoeHub} from "../src/GoeHub.sol";
 
 contract Deploy is Script {
     function run() public {

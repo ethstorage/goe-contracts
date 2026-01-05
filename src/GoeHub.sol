@@ -9,12 +9,9 @@ import {IFlatDirectoryFactory} from "./interfaces/IFlatDirectoryFactory.sol";
 import {GoeRepo} from "./GoeRepo.sol";
 
 contract GoeHub is Ownable, ReentrancyGuard {
-    event RepoCreated(address indexed repo, address indexed creator, bytes repoName);
+    event RepoCreated(address indexed repo, address indexed owner, bytes repoName);
     event ImplementationUpdated(address indexed oldImp, address indexed newImp);
     event FDFactoryUpdated(address indexed oldFactory, address indexed newFactory);
-
-    address public fdFactory;
-    address public repoImpl;
 
     struct RepoInfo {
         address repoAddress;
@@ -22,30 +19,38 @@ contract GoeHub is Ownable, ReentrancyGuard {
         bytes repoName;
     }
 
-    mapping(address => RepoInfo[]) public reposOf; //  creator => repos
+    address public fdFactory;
+    address public repoImpl;
+    mapping(address => RepoInfo[]) public reposOf; //  owner => repos
+    mapping(address => mapping(bytes32 => address)) private _repoByName; // owner => nameHash => repo
 
-    constructor(address _fdFactory) Ownable(msg.sender) {
-        require(_fdFactory != address(0), "EthfsHub: invalid db factory");
-        fdFactory = _fdFactory;
+    constructor(address fdFactory_) Ownable(msg.sender) {
+        require(fdFactory_ != address(0), "GoeHub: invalid db factory");
+        fdFactory = fdFactory_;
         repoImpl = address(new GoeRepo());
     }
 
-    function setRepoImplementation(address _newImp) external onlyOwner {
-        require(_newImp != address(0), "EthfsHub: invalid implementation");
-        emit ImplementationUpdated(repoImpl, _newImp);
-        repoImpl = _newImp;
+    function setRepoImplementation(address newImp) external onlyOwner {
+        require(newImp != address(0), "GoeHub: invalid implementation");
+        emit ImplementationUpdated(repoImpl, newImp);
+        repoImpl = newImp;
     }
 
-    function setFdFactory(address _newFactory) external onlyOwner {
-        require(_newFactory != address(0), "EthfsHub: invalid db factory");
-        emit FDFactoryUpdated(fdFactory, _newFactory);
-        fdFactory = _newFactory;
+    function setFdFactory(address newFactory) external onlyOwner {
+        require(newFactory != address(0), "GoeHub: invalid db factory");
+        emit FDFactoryUpdated(fdFactory, newFactory);
+        fdFactory = newFactory;
     }
 
     function createRepo(bytes memory repoName) external nonReentrant returns (address) {
+        require(repoName.length > 0, "GoeHub: empty repo name");
+        bytes32 nameHash = keccak256(repoName);
+        require(_repoByName[msg.sender][nameHash] == address(0), "GoeHub: repo name already exists for owner");
+
         address repoInstance = Clones.clone(repoImpl);
         GoeRepo(payable(repoInstance)).initialize(msg.sender, repoName, IFlatDirectoryFactory(fdFactory));
 
+        _repoByName[msg.sender][nameHash] = repoInstance;
         RepoInfo memory info = RepoInfo({repoAddress: repoInstance, creationTime: block.timestamp, repoName: repoName});
         reposOf[msg.sender].push(info);
 
@@ -55,16 +60,12 @@ contract GoeHub is Ownable, ReentrancyGuard {
     }
 
     // ---------------------- query ----------------------
-    function getUserRepoCount(address user) external view returns (uint256) {
-        return reposOf[user].length;
+    function getRepoCount(address owner) external view returns (uint256) {
+        return reposOf[owner].length;
     }
 
-    function getUserReposPaginated(address user, uint256 start, uint256 limit)
-        external
-        view
-        returns (RepoInfo[] memory)
-    {
-        RepoInfo[] storage userRepos = reposOf[user];
+    function getReposPaginated(address owner, uint256 start, uint256 limit) external view returns (RepoInfo[] memory) {
+        RepoInfo[] storage userRepos = reposOf[owner];
 
         uint256 end = start + limit;
         if (end > userRepos.length) end = userRepos.length;
@@ -75,5 +76,9 @@ contract GoeHub is Ownable, ReentrancyGuard {
             result[i] = userRepos[start + i];
         }
         return result;
+    }
+
+    function getRepoByName(address owner, bytes calldata repoName) external view returns (address) {
+        return _repoByName[owner][keccak256(repoName)];
     }
 }
