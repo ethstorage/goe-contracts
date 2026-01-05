@@ -64,8 +64,8 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
     {
         __AccessControl_init();
 
-        require(_owner != address(0), "EthfsRepo: Invalid owner");
-        require(_repoName.length > 0 && _repoName.length <= 100, "EthfsRepo: Invalid repo name length");
+        require(_owner != address(0), "GoeRepo: Invalid owner");
+        require(_repoName.length > 0 && _repoName.length <= 100, "GoeRepo: Invalid repo name length");
         for (uint256 i; i < _repoName.length; i++) {
             bytes1 char = _repoName[i];
             require(
@@ -73,7 +73,7 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
                     || (char >= 0x41 && char <= 0x5A) // A-Z
                     || (char >= 0x30 && char <= 0x39) // 0-9
                     || (char == 0x2D || char == 0x2E || char == 0x5F), // -._
-                "EthfsRepo: Repo name must be alphanumeric or -._"
+                "GoeRepo: Repo name must be alphanumeric or -._"
             );
         }
 
@@ -95,7 +95,7 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
         require(
             hasRole(PUSHER_ROLE, msg.sender) || hasRole(MAINTAINER_ROLE, msg.sender)
                 || hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "EthfsRepo: No push permission"
+            "GoeRepo: No push permission"
         );
     }
 
@@ -107,7 +107,7 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
     function _onlyMaintainer() internal view {
         require(
             hasRole(MAINTAINER_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "EthfsRepo: No maintainer permission"
+            "GoeRepo: No maintainer permission"
         );
     }
 
@@ -159,7 +159,7 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
 
         // 1. First push to this branch
         if (!branch.exists) {
-            require(parentOid == bytes20(0), "EthfsRepo: First push must have no parent");
+            require(parentOid == bytes20(0), "GoeRepo: First push must have no parent");
             branch.headOid = newOid;
             branch.exists = true;
             branch.creator = msg.sender;
@@ -176,7 +176,7 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
         }
         // 2. Subsequent push (must be fast-forward: Parent OID must match current branch head)
         else {
-            require(branch.headOid == parentOid, "EthfsRepo: Non fast-forward push not allowed");
+            require(branch.headOid == parentOid, "GoeRepo: Non fast-forward push not allowed");
             branch.headOid = newOid;
         }
 
@@ -215,11 +215,11 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
         bytes32 refKey = _keccak256(refName);
         Branch storage branch = _branches[refKey];
         PushRecord[] storage records = _branchRecords[refKey];
-        require(branch.exists, "EthfsRepo: Branch does not exist");
+        require(branch.exists, "GoeRepo: Branch does not exist");
         require(
             msg.sender == branch.creator || hasRole(MAINTAINER_ROLE, msg.sender)
                 || hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            "EthfsRepo: No permission to push or delete branch"
+            "GoeRepo: No permission to push or delete branch"
         );
 
         bytes20 oldOid = branch.headOid; // Record old head for event traceability
@@ -248,11 +248,11 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
 
     function _handleBranchDeletion(bytes32 refKey, Branch storage branch) private {
         bytes32 defaultRefKey = _keccak256(defaultBranchName);
-        require(refKey != defaultRefKey, "EthfsRepo: Cannot delete default branch");
+        require(refKey != defaultRefKey, "GoeRepo: Cannot delete default branch");
 
         // 1. Remove branch name from _branchNames (O(1) swap-and-pop)
         uint256 branchIdx = _branchNameIndex[refKey];
-        require(branchIdx < _branchNames.length, "EthfsRepo: Branch not in name list");
+        require(branchIdx < _branchNames.length, "GoeRepo: Branch not in name list");
 
         if (branchIdx < _branchNames.length - 1) {
             bytes memory lastBranchName = _branchNames[_branchNames.length - 1];
@@ -313,8 +313,8 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
         bytes20 parentOid,
         uint256 parentIndex
     ) private {
-        require(parentIndex < branch.activeLength, "EthfsRepo: Parent index out of valid range");
-        require(records[parentIndex].newOid == parentOid, "EthfsRepo: Parent OID not match");
+        require(parentIndex < branch.activeLength, "GoeRepo: Parent index out of valid range");
+        require(records[parentIndex].newOid == parentOid, "GoeRepo: Parent OID not match");
 
         // 1. Logical truncation: Active length set to parentIndex + 1
         uint256 nextIndex = parentIndex + 1;
@@ -341,7 +341,7 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
     // Set default branch
     function setDefaultBranch(bytes calldata branchName) external onlyMaintainer {
         bytes32 refKey = _keccak256(branchName);
-        require(_branches[refKey].exists, "EthfsRepo: Branch not exists");
+        require(_branches[refKey].exists, "GoeRepo: Branch not exists");
 
         bytes memory oldBranch = defaultBranchName;
         defaultBranchName = branchName;
@@ -403,7 +403,7 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
         bytes32 refKey = _keccak256(refName);
         Branch storage branch = _branches[refKey];
         PushRecord[] storage records = _branchRecords[refKey];
-        require(branch.exists, "EthfsRepo: Branch not exists");
+        require(branch.exists, "GoeRepo: Branch not exists");
 
         // Boundary 1: If startIndex is out of the active range, return an empty array
         if (startIndex >= branch.activeLength) {
@@ -450,7 +450,7 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
             require(
                 hasRole(PUSHER_ROLE, msg.sender) || hasRole(MAINTAINER_ROLE, msg.sender)
                     || hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-                "EthfsRepo: No write permission"
+                "GoeRepo: No write permission"
             );
         }
 
@@ -505,7 +505,7 @@ contract GoeRepo is Initializable, AccessControlUpgradeable, ReentrancyGuard {
         // 3. Case: Integrity check (records.length < activeLength)
         // This should never happen and indicates a storage corruption.
         else {
-            revert("EthfsRepo: Storage corruption (Active length exceeds physical length)");
+            revert("GoeRepo: Storage corruption (Active length exceeds physical length)");
         }
     }
 }
